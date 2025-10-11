@@ -1,8 +1,8 @@
 const express = require("express");
 const app = express();
 
-// Zmienna przechowująca aktualny stan polecenia dla serwa
-let currentCommand = 'stop'; // 'lift', 'lower', or 'stop'
+// Zmienna przechowująca docelową pozycję róży (1-4)
+let targetPosition = 1;
 
 app.use(express.static("public"));
 
@@ -10,77 +10,47 @@ app.get("/", (req, res) => {
   res.send(`
   <html>
   <head>
-    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Sterowanie Różą 🌹</title>
     <style>
-      body { text-align:center; font-family:sans-serif; margin-top:40px; touch-action: manipulation; }
-      .container { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-      button { 
-        font-size: 20px; 
-        padding: 25px 50px; 
-        border-radius: 10px; 
-        cursor: pointer; 
-        border: 2px solid #555;
-        width: 80%;
-        max-width: 300px;
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10+ */
-        user-select: none; /* Standard */
-      }
-      #liftBtn { background-color: #a7f0a7; }
-      #lowerBtn { background-color: #f0a7a7; }
+      body { text-align:center; font-family:sans-serif; margin-top:40px; }
+      .container { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+      button { font-size:18px; padding:15px 30px; border-radius:10px; cursor:pointer; width: 80%; max-width: 300px; }
+      .pos { font-size:22px; margin-top:20px; }
     </style>
   </head>
   <body>
-    <h2>Sterowanie Różą 🌹</h2>
-    <p>Naciśnij i przytrzymaj przycisk, aby poruszyć serwem.</p>
+    <h2>Ustaw pozycję Róży 🌹</h2>
     <div class="container">
-      <button id="liftBtn">▲ Podnieś ▲</button>
-      <button id="lowerBtn">▼ Opuść ▼</button>
+      <button onclick="setPos(1)">Pozycja 1 (Na dole)</button>
+      <button onclick="setPos(2)">Pozycja 2</button>
+      <button onclick="setPos(3)">Pozycja 3</button>
+      <button onclick="setPos(4)">Pozycja 4 (W górze)</button>
     </div>
+    <div class="pos">Aktualne polecenie: Pozycja <span id="pos">${targetPosition}</span></div>
     <script>
-      const liftButton = document.getElementById('liftBtn');
-      const lowerButton = document.getElementById('lowerBtn');
-
-      // Funkcja wysyłająca komendę do serwera
-      const sendCommand = (cmd) => fetch('/set?cmd=' + cmd);
-
-      // --- Zdarzenia dla przycisku "Podnieś" ---
-      // Mysz: naciśnięcie
-      liftButton.addEventListener('mousedown', () => sendCommand('lift'));
-      // Mysz: puszczenie lub wyjechanie kursorem poza przycisk
-      liftButton.addEventListener('mouseup', () => sendCommand('stop'));
-      liftButton.addEventListener('mouseleave', () => sendCommand('stop'));
-      // Dotyk: naciśnięcie
-      liftButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendCommand('lift'); });
-      // Dotyk: puszczenie
-      liftButton.addEventListener('touchend', () => sendCommand('stop'));
-
-
-      // --- Zdarzenia dla przycisku "Opuść" ---
-      lowerButton.addEventListener('mousedown', () => sendCommand('lower'));
-      lowerButton.addEventListener('mouseup', () => sendCommand('stop'));
-      lowerButton.addEventListener('mouseleave', () => sendCommand('stop'));
-      lowerButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendCommand('lower'); });
-      lowerButton.addEventListener('touchend', () => sendCommand('stop'));
+      async function setPos(p) {
+        await fetch('/set?pos=' + p);
+        document.getElementById('pos').innerText = p;
+      }
     </script>
   </body>
   </html>`);
 });
 
-// Endpoint do ustawiania komendy
+// Endpoint do ustawiania docelowej pozycji
 app.get("/set", (req, res) => {
-  const cmd = req.query.cmd;
-  if (['lift', 'lower', 'stop'].includes(cmd)) {
-    currentCommand = cmd;
-    console.log(`Nowa komenda: ${currentCommand}`);
+  const pos = parseInt(req.query.pos);
+  if (pos >= 1 && pos <= 4) {
+    targetPosition = pos;
+    console.log("Ustawiono nową pozycję docelową:", targetPosition);
   }
   res.send("OK");
 });
 
-// Endpoint dla ESP8266 - zwraca aktualną komendę
+// Endpoint dla ESP8266 - zwraca docelową pozycję
 app.get("/state", (req, res) => {
-  res.send(currentCommand);
+  res.send(targetPosition.toString());
 });
 
 const PORT = process.env.PORT || 3000;

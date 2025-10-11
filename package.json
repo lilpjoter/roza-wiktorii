@@ -1,0 +1,12 @@
+{
+  "name": "rose-control",
+  "version": "1.0.0",
+  "description": "Sterowanie serwami ESP8266 przez stronę WWW",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

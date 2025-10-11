@@ -1,58 +1,86 @@
 const express = require("express");
 const app = express();
 
-// Zmienne przechowujące ostatnią komendę i jej unikalne ID
-let lastCommand = "stop"; 
-let commandId = 0; // Będzie się zwiększać przy każdym kliknięciu
+// Zmienna przechowująca aktualny stan polecenia dla serwa
+let currentCommand = 'stop'; // 'lift', 'lower', or 'stop'
 
 app.use(express.static("public"));
 
-// Strona główna z dwoma przyciskami akcji
 app.get("/", (req, res) => {
   res.send(`
   <html>
   <head>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
     <title>Sterowanie Różą 🌹</title>
     <style>
-      body { text-align:center; font-family:sans-serif; margin-top:40px; }
-      .container { display: flex; justify-content: center; gap: 20px; }
-      button { font-size:20px; padding:20px 40px; border-radius:10px; cursor:pointer; border: 2px solid #555; }
+      body { text-align:center; font-family:sans-serif; margin-top:40px; touch-action: manipulation; }
+      .container { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+      button { 
+        font-size: 20px; 
+        padding: 25px 50px; 
+        border-radius: 10px; 
+        cursor: pointer; 
+        border: 2px solid #555;
+        width: 80%;
+        max-width: 300px;
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10+ */
+        user-select: none; /* Standard */
+      }
       #liftBtn { background-color: #a7f0a7; }
       #lowerBtn { background-color: #f0a7a7; }
     </style>
   </head>
   <body>
     <h2>Sterowanie Różą 🌹</h2>
+    <p>Naciśnij i przytrzymaj przycisk, aby poruszyć serwem.</p>
     <div class="container">
-      <button id="liftBtn" onclick="setCmd('lift')">▲ Podnieś Różę ▲</button>
-      <button id="lowerBtn" onclick="setCmd('lower')">▼ Opuść Różę ▼</button>
+      <button id="liftBtn">▲ Podnieś ▲</button>
+      <button id="lowerBtn">▼ Opuść ▼</button>
     </div>
     <script>
-      async function setCmd(cmd) {
-        // Informujemy serwer o nowym poleceniu
-        await fetch('/set?cmd=' + cmd);
-        console.log("Wysłano komendę: " + cmd);
-      }
+      const liftButton = document.getElementById('liftBtn');
+      const lowerButton = document.getElementById('lowerBtn');
+
+      // Funkcja wysyłająca komendę do serwera
+      const sendCommand = (cmd) => fetch('/set?cmd=' + cmd);
+
+      // --- Zdarzenia dla przycisku "Podnieś" ---
+      // Mysz: naciśnięcie
+      liftButton.addEventListener('mousedown', () => sendCommand('lift'));
+      // Mysz: puszczenie lub wyjechanie kursorem poza przycisk
+      liftButton.addEventListener('mouseup', () => sendCommand('stop'));
+      liftButton.addEventListener('mouseleave', () => sendCommand('stop'));
+      // Dotyk: naciśnięcie
+      liftButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendCommand('lift'); });
+      // Dotyk: puszczenie
+      liftButton.addEventListener('touchend', () => sendCommand('stop'));
+
+
+      // --- Zdarzenia dla przycisku "Opuść" ---
+      lowerButton.addEventListener('mousedown', () => sendCommand('lower'));
+      lowerButton.addEventListener('mouseup', () => sendCommand('stop'));
+      lowerButton.addEventListener('mouseleave', () => sendCommand('stop'));
+      lowerButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendCommand('lower'); });
+      lowerButton.addEventListener('touchend', () => sendCommand('stop'));
     </script>
   </body>
   </html>`);
 });
 
-// Endpoint do ustawiania nowej komendy
+// Endpoint do ustawiania komendy
 app.get("/set", (req, res) => {
   const cmd = req.query.cmd;
-  if (cmd === 'lift' || cmd === 'lower') {
-    lastCommand = cmd;
-    commandId++; // Zwiększamy ID, aby ESP wiedział, że to NOWA komenda
-    console.log(`Nowa komenda: ${lastCommand}, ID: ${commandId}`);
+  if (['lift', 'lower', 'stop'].includes(cmd)) {
+    currentCommand = cmd;
+    console.log(`Nowa komenda: ${currentCommand}`);
   }
   res.send("OK");
 });
 
-// Endpoint dla ESP8266, który wysyła ostatnią komendę i jej ID
+// Endpoint dla ESP8266 - zwraca aktualną komendę
 app.get("/state", (req, res) => {
-  res.send(`${lastCommand},${commandId}`); // Format: "komenda,ID" np. "lift,101"
+  res.send(currentCommand);
 });
 
 const PORT = process.env.PORT || 3000;

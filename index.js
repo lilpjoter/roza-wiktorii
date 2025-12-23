@@ -283,4 +283,8 @@ app.get("/setAll", (req, res) => {
 app.get("/state", (req, res) => {
   const { esp } = req.query;
   if (states[esp]) res.send(`${states[esp].targetAngle},${states[esp].id}`);
-  else res.status(404).send("Unknown
+  else res.status(404).send("Unknown ESP");
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Serwer działa na porcie " + PORT));

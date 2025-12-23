@@ -174,39 +174,30 @@ app.get("/", (req, res) => {
              ];
           };
 
-          // 1500 małych płatków
-          for (let i = 0; i < 1500; i++) makeFlake(i, true);
+          // --- ZWIĘKSZONO DO 2000 ABY NIE ZABRAKŁO ŚNIEGU ---
+          for (let i = 0; i < 2000; i++) makeFlake(i, true);
 
           function makeFlake(i, fastForward) {
-              // POPRAWKA: Startujemy z bardzo szerokiego zakresu.
-              // (cw + 600) i przesunięcie -500 zapewnia, że śnieg zaczyna daleko z lewej strony,
-              // dzięki czemu wiatr nawiewa go NAD przyciski.
-              const startX = Math.random() * (cw + 600) - 500; 
+              // Szeroki start (z lewej i prawej) aby wiatr nanosił śnieg wszędzie
+              const startX = Math.random() * (cw + 800) - 600; 
               
               arr[i] = { 
                   x: startX, 
                   y: -20, 
-                  // Rozmiar mikro: 0.5px do 2.0px
-                  s: Math.random() * 1.5 + 0.5, 
+                  s: Math.random() * 1.5 + 0.5, // Mikro płatki
                   stopped: false 
               };
 
               arr[i].t = gsap.to(arr[i], {
                   y: ch + 20, 
-                  // Wiatr: przesuwa w prawo o 150-250px w trakcie spadania
-                  x: '+=' + (200 + gsap.utils.random(-50, 50)), 
+                  x: '+=' + (200 + gsap.utils.random(-50, 50)), // Wiatr w prawo
                   ease: "none",
                   
-                  // --- O WIELE WOLNIEJ ---
-                  // Czas spadania: od 15 do 25 sekund
+                  // --- BARDZO WOLNY OPAD (15-25 sekund) ---
                   duration: gsap.utils.random(15, 25), 
                   
                   repeat: -1,
-                  
-                  // --- POPRAWKA BRAKU ŚNIEGU ---
-                  // Skoro śnieg spada 25 sekund, musimy "przewinąć" czas startu
-                  // o losową wartość z zakresu 0-25s. Dzięki temu śnieg będzie 
-                  // w połowie ekranu (nad przyciskami) od razu po wejściu.
+                  // Losowy start, żeby ekran był pełny od razu
                   delay: fastForward ? -Math.random() * 25 : 0,
                   
                   onUpdate: function() {
@@ -221,12 +212,14 @@ app.get("/", (req, res) => {
               const rects = obstacles();
               
               for (let r of rects) {
-                  const hitMargin = 4;
+                  const hitMargin = 5;
 
                   // 1. KOLIZJA Z GÓRĄ (TOP)
                   if (flake.x > r.left && flake.x < r.right) {
                       if (Math.abs(flake.y - r.top) < hitMargin) {
-                          freezeFlake(flake, tween, flake.x, r.top - flake.s/2);
+                          // "Piętrzenie": losowo odejmujemy 0-4px, żeby śnieg nie był równy jak od linijki
+                          let pileHeight = Math.random() * 4;
+                          freezeFlake(flake, tween, flake.x, r.top - flake.s/2 - pileHeight);
                           return;
                       }
                   }
@@ -246,7 +239,18 @@ app.get("/", (req, res) => {
               flake.stopped = true;
               flake.x = stickX;
               flake.y = stickY;
-              // Brak znikania - zostaje na zawsze
+
+              // --- SEKRETNY RECYKLING ---
+              // Płatek leży na przycisku przez losowy czas (20-40 sekund),
+              // a potem "cicho" wraca na górę, żeby znów spaść.
+              // To rozwiązuje problem "braku śniegu", bo zasoby się odnawiają.
+              gsap.delayedCall(gsap.utils.random(20, 40), () => {
+                  flake.stopped = false;
+                  flake.y = -20;
+                  // Reset pozycji X na losową startową
+                  flake.x = Math.random() * (cw + 800) - 600;
+                  tween.play(0); // Restart animacji od początku
+              });
           }
 
           ctx.fillStyle = '#ffffff'; 

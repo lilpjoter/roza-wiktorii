@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
         padding: 0;
         width: 100%;
         height: 100%;
-        background: #050505; /* Bardzo ciemne tło */
+        background: #050505;
         overflow: hidden;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       }
@@ -72,7 +72,7 @@ app.get("/", (req, res) => {
       .mood-buttons { 
         display: flex; 
         flex-direction: row; 
-        gap: 40px; /* Duże odstępy, żeby śnieg mógł spadać między nimi */
+        gap: 40px; 
         justify-content: center; 
         flex-wrap: wrap;
       }
@@ -88,14 +88,13 @@ app.get("/", (req, res) => {
         font-size: 16px;
         position: relative; 
         transition: transform 0.1s;
-        box-shadow: 0 10px 25px rgba(0,0,0,1); /* Mocny cień */
+        box-shadow: 0 10px 25px rgba(0,0,0,1);
         
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         
-        /* Ważne: twarde krawędzie dla kolizji */
         backdrop-filter: blur(4px);
       }
 
@@ -167,7 +166,6 @@ app.get("/", (req, res) => {
               c.height = ch;
           });
 
-          // Pobieramy pozycje przycisków
           const obstacles = () => {
              return [
                  document.getElementById('btnHepi').getBoundingClientRect(),
@@ -176,27 +174,26 @@ app.get("/", (req, res) => {
              ];
           };
 
-          // Więcej płatków dla lepszego efektu
-          for (let i = 0; i < 900; i++) makeFlake(i, true);
+          // --- ZWIĘKSZONA ILOŚĆ PŁATKÓW (1500) ---
+          // Ponieważ te co spadną już nie wracają, musimy mieć ich dużo w zapasie
+          for (let i = 0; i < 1500; i++) makeFlake(i, true);
 
           function makeFlake(i, fastForward) {
-              // Startujemy losowo, ale szerzej niż ekran (żeby wiatr nie robił pustki z lewej)
               const startX = Math.random() * (cw + 200) - 200; 
               
               arr[i] = { 
                   x: startX, 
                   y: -20, 
-                  s: Math.random() * 3 + 1, // Wielkość
+                  // --- ZNACZNIE MNIEJSZY ROZMIAR ---
+                  // Zakres od 0.5px do 2.0px
+                  s: Math.random() * 1.5 + 0.5, 
                   stopped: false 
               };
 
-              // --- ANIMACJA Z WIATREM I ORYGINALNĄ PRĘDKOŚCIĄ ---
               arr[i].t = gsap.to(arr[i], {
                   y: ch + 20, 
-                  // Wiatr wieje w prawo (+200px w trakcie spadania)
                   x: '+=' + (200 + gsap.utils.random(-50, 50)), 
                   ease: "none",
-                  // Oryginalna prędkość (wolniej niż poprzednio)
                   duration: gsap.utils.random(3, 8), 
                   repeat: -1,
                   delay: fastForward ? -Math.random() * 8 : 0,
@@ -212,23 +209,18 @@ app.get("/", (req, res) => {
               const rects = obstacles();
               
               for (let r of rects) {
-                  // Margines błędu kolizji
-                  const hitMargin = 6;
+                  const hitMargin = 4; // Mniejszy margines dla małych płatków
 
                   // 1. KOLIZJA Z GÓRĄ (TOP)
-                  // Sprawdzamy czy płatek jest w poziomie przycisku
                   if (flake.x > r.left && flake.x < r.right) {
-                      // Czy dotyka góry?
                       if (Math.abs(flake.y - r.top) < hitMargin) {
                           freezeFlake(flake, tween, flake.x, r.top - flake.s/2);
                           return;
                       }
                   }
 
-                  // 2. KOLIZJA Z BOKIEM (LEWA STRONA - bo wiatr wieje w prawo)
-                  // Sprawdzamy czy płatek jest w pionie przycisku (pomiędzy górą a dołem)
+                  // 2. KOLIZJA Z BOKIEM (LEWA STRONA)
                   if (flake.y > r.top && flake.y < r.bottom) {
-                      // Czy dotyka lewej krawędzi?
                       if (Math.abs(flake.x - r.left) < hitMargin) {
                           freezeFlake(flake, tween, r.left - flake.s/2, flake.y);
                           return;
@@ -238,28 +230,27 @@ app.get("/", (req, res) => {
           }
 
           function freezeFlake(flake, tween, stickX, stickY) {
+              // Zatrzymaj animację
               tween.pause();
+              
+              // Oznacz jako zatrzymany
               flake.stopped = true;
+              
+              // Przyklej w miejscu zderzenia
               flake.x = stickX;
               flake.y = stickY;
 
-              // Topnienie (znikanie po czasie)
-              gsap.to(flake, { opacity: 0, duration: 2, delay: gsap.utils.random(2, 5), onComplete: () => {
-                  flake.stopped = false;
-                  flake.opacity = 1;
-                  flake.y = -20;
-                  // Reset pozycji startowej (szeroki zakres dla wiatru)
-                  flake.x = Math.random() * (cw + 200) - 200; 
-                  tween.play(0);
-              }});
+              // --- USUNIĘTO TOPNIENIE ---
+              // Płatek zostaje tu na zawsze.
+              // Nie ma kodu gsap.to(opacity: 0)...
           }
 
-          // --- KOLOR BIAŁY ---
           ctx.fillStyle = '#ffffff'; 
 
           gsap.ticker.add(() => {
               ctx.clearRect(0, 0, cw, ch);
               arr.forEach(f => {
+                  // Rysujemy wszystkie (te co lecą i te co leżą)
                   ctx.globalAlpha = f.opacity || 0.9; 
                   ctx.beginPath();
                   ctx.arc(f.x, f.y, f.s, 0, Math.PI * 2);
@@ -272,7 +263,6 @@ app.get("/", (req, res) => {
   </html>`);
 });
 
-// Endpointy
 app.get("/setAll", (req, res) => {
   const { angle } = req.query;
   const newAngle = parseInt(angle);

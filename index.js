@@ -27,9 +27,9 @@ app.get("/", (req, res) => {
         padding: 0;
         width: 100%;
         height: 100%;
-        background: #050505;
+        background: #050505; /* Prawie czarne tło */
         overflow: hidden;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Courier New', Courier, monospace; /* Bardziej surowa czcionka */
       }
 
       canvas {
@@ -63,10 +63,12 @@ app.get("/", (req, res) => {
       
       h1 { 
         color: #fff;
-        font-weight: 300;
-        letter-spacing: 2px;
-        margin-bottom: 40px;
-        text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        font-weight: normal;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-bottom: 50px;
+        font-size: 14px;
+        opacity: 0.5;
       }
       
       .mood-buttons { 
@@ -77,37 +79,43 @@ app.get("/", (req, res) => {
         flex-wrap: wrap;
       }
       
+      /* --- MINIMALISTYCZNE CZARNE PRZYCISKI --- */
       .btn { 
         width: 100px;
         height: 100px;
-        border-radius: 12px; 
+        
+        /* Kwadratowe, czarne, bez obramowania */
+        border-radius: 0; 
+        background: #000000;
         border: none;
+        
         cursor: pointer; 
         color: white; 
         font-weight: bold;
-        font-size: 16px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         position: relative; 
         transition: transform 0.1s;
-        box-shadow: 0 10px 25px rgba(0,0,0,1);
+        
+        /* Delikatny cień, żeby odróżnić czarny przycisk od czarnego tła */
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
         
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        
-        backdrop-filter: blur(4px);
       }
 
-      .btn:active { transform: scale(0.95); }
+      .btn:active { transform: scale(0.98); background: #111; }
+      
+      /* Usunięto kolory - wszystko czarne */
+      .btn-hepi, .btn-normal, .btn-sad {
+          /* Ewentualnie bardzo subtelny border na dole, jeśli chcesz */
+          /* border-bottom: 2px solid #333; */
+      }
 
-      /* Kolory przycisków */
-      .btn-hepi { background: linear-gradient(135deg, #2e7d32, #1b5e20); border: 1px solid #4caf50; }
-      .btn-normal { background: linear-gradient(135deg, #1565c0, #0d47a1); border: 1px solid #2196f3; }
-      .btn-sad { background: linear-gradient(135deg, #37474f, #263238); border: 1px solid #546e7a; }
-
-      .emoji { font-size: 32px; margin-bottom: 8px; display: block; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
-
-      #status { font-size: 12px; color: #666; margin-top: 30px; display: block;}
+      #status { font-size: 10px; color: #444; margin-top: 40px; display: block; font-family: monospace;}
     </style>
   </head>
   <body>
@@ -116,37 +124,37 @@ app.get("/", (req, res) => {
 
     <div class="ui-layer">
       <div class="container">
-        <h1>Sterowanie Nastrojem</h1>
+        <h1>Control Unit</h1>
         
         <div class="mood-buttons">
           <button class="btn btn-hepi" id="btnHepi" onclick="setGlobalAngle(0)">
-            <span class="emoji">😊</span>Hepi
+            Hepi
           </button>
           
           <button class="btn btn-normal" id="btnNormal" onclick="setGlobalAngle(540)">
-             <span class="emoji">😐</span>Normal
+             Normal
           </button>
           
           <button class="btn btn-sad" id="btnSad" onclick="setGlobalAngle(1080)">
-             <span class="emoji">😢</span>Smutek
+             Sad
           </button>
         </div>
         
-        <small id="status">Gotowy</small>
+        <small id="status">System Ready</small>
       </div>
     </div>
 
     <script>
       function setGlobalAngle(angle) {
         const status = document.getElementById('status');
-        status.innerText = "Wysyłam...";
+        status.innerText = "SENDING >> " + angle;
         fetch(\`/setAll?angle=\${angle}\`)
           .then(() => {
-             status.innerText = "OK";
-             status.style.color = "#4CAF50";
-             setTimeout(() => { status.innerText = "Gotowy"; status.style.color = "#666"; }, 2000);
+             status.innerText = "ACKNOWLEDGED";
+             status.style.color = "#fff";
+             setTimeout(() => { status.innerText = "STANDBY"; status.style.color = "#444"; }, 2000);
           })
-          .catch(() => status.innerText = "Błąd!");
+          .catch(() => status.innerText = "CONNECTION ERROR");
       }
 
       window.addEventListener('load', () => {
@@ -174,31 +182,30 @@ app.get("/", (req, res) => {
              ];
           };
 
-          // --- ZWIĘKSZONO DO 2000 ABY NIE ZABRAKŁO ŚNIEGU ---
-          for (let i = 0; i < 2000; i++) makeFlake(i, true);
+          // 2000 płatków w buforze
+          for (let i = 0; i < 2000; i++) makeFlake(i);
 
-          function makeFlake(i, fastForward) {
-              // Szeroki start (z lewej i prawej) aby wiatr nanosił śnieg wszędzie
+          function makeFlake(i) {
               const startX = Math.random() * (cw + 800) - 600; 
               
               arr[i] = { 
                   x: startX, 
-                  y: -20, 
-                  s: Math.random() * 1.5 + 0.5, // Mikro płatki
+                  y: -20, // Start nad ekranem
+                  s: Math.random() * 1.5 + 0.5, 
                   stopped: false 
               };
 
               arr[i].t = gsap.to(arr[i], {
                   y: ch + 20, 
-                  x: '+=' + (200 + gsap.utils.random(-50, 50)), // Wiatr w prawo
+                  x: '+=' + (200 + gsap.utils.random(-50, 50)), 
                   ease: "none",
-                  
-                  // --- BARDZO WOLNY OPAD (15-25 sekund) ---
                   duration: gsap.utils.random(15, 25), 
-                  
                   repeat: -1,
-                  // Losowy start, żeby ekran był pełny od razu
-                  delay: fastForward ? -Math.random() * 25 : 0,
+                  
+                  // --- BRAK ŚNIEGU NA STARCIE ---
+                  // Opóźnienie dodatnie (0 do 30 sekund). 
+                  // Płatki zaczną spadać pojedynczo dopiero po załadowaniu.
+                  delay: Math.random() * 30, 
                   
                   onUpdate: function() {
                       checkCollision(arr[i], this);
@@ -214,17 +221,16 @@ app.get("/", (req, res) => {
               for (let r of rects) {
                   const hitMargin = 5;
 
-                  // 1. KOLIZJA Z GÓRĄ (TOP)
+                  // 1. GÓRA
                   if (flake.x > r.left && flake.x < r.right) {
                       if (Math.abs(flake.y - r.top) < hitMargin) {
-                          // "Piętrzenie": losowo odejmujemy 0-4px, żeby śnieg nie był równy jak od linijki
-                          let pileHeight = Math.random() * 4;
+                          let pileHeight = Math.random() * 3;
                           freezeFlake(flake, tween, flake.x, r.top - flake.s/2 - pileHeight);
                           return;
                       }
                   }
 
-                  // 2. KOLIZJA Z BOKIEM (LEWA STRONA)
+                  // 2. LEWY BOK
                   if (flake.y > r.top && flake.y < r.bottom) {
                       if (Math.abs(flake.x - r.left) < hitMargin) {
                           freezeFlake(flake, tween, r.left - flake.s/2, flake.y);
@@ -240,16 +246,12 @@ app.get("/", (req, res) => {
               flake.x = stickX;
               flake.y = stickY;
 
-              // --- SEKRETNY RECYKLING ---
-              // Płatek leży na przycisku przez losowy czas (20-40 sekund),
-              // a potem "cicho" wraca na górę, żeby znów spaść.
-              // To rozwiązuje problem "braku śniegu", bo zasoby się odnawiają.
+              // Recykling: Płatek leży 20-40s, potem wraca na górę
               gsap.delayedCall(gsap.utils.random(20, 40), () => {
                   flake.stopped = false;
                   flake.y = -20;
-                  // Reset pozycji X na losową startową
                   flake.x = Math.random() * (cw + 800) - 600;
-                  tween.play(0); // Restart animacji od początku
+                  tween.play(0); 
               });
           }
 
@@ -258,10 +260,14 @@ app.get("/", (req, res) => {
           gsap.ticker.add(() => {
               ctx.clearRect(0, 0, cw, ch);
               arr.forEach(f => {
-                  ctx.globalAlpha = f.opacity || 0.9; 
-                  ctx.beginPath();
-                  ctx.arc(f.x, f.y, f.s, 0, Math.PI * 2);
-                  ctx.fill();
+                  // Rysuj tylko jeśli płatek "wystartował" (minął delay)
+                  // GSAP zarządza pozycją, ale my sprawdzamy czy y > -50 żeby nie rysować niewidocznych
+                  if (f.y > -50) {
+                      ctx.globalAlpha = f.opacity || 0.9; 
+                      ctx.beginPath();
+                      ctx.arc(f.x, f.y, f.s, 0, Math.PI * 2);
+                      ctx.fill();
+                  }
               });
           });
       });
@@ -270,6 +276,7 @@ app.get("/", (req, res) => {
   </html>`);
 });
 
+// Endpointy
 app.get("/setAll", (req, res) => {
   const { angle } = req.query;
   const newAngle = parseInt(angle);

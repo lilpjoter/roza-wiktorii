@@ -174,29 +174,41 @@ app.get("/", (req, res) => {
              ];
           };
 
-          // --- ZWIĘKSZONA ILOŚĆ PŁATKÓW (1500) ---
-          // Ponieważ te co spadną już nie wracają, musimy mieć ich dużo w zapasie
+          // 1500 małych płatków
           for (let i = 0; i < 1500; i++) makeFlake(i, true);
 
           function makeFlake(i, fastForward) {
-              const startX = Math.random() * (cw + 200) - 200; 
+              // POPRAWKA: Startujemy z bardzo szerokiego zakresu.
+              // (cw + 600) i przesunięcie -500 zapewnia, że śnieg zaczyna daleko z lewej strony,
+              // dzięki czemu wiatr nawiewa go NAD przyciski.
+              const startX = Math.random() * (cw + 600) - 500; 
               
               arr[i] = { 
                   x: startX, 
                   y: -20, 
-                  // --- ZNACZNIE MNIEJSZY ROZMIAR ---
-                  // Zakres od 0.5px do 2.0px
+                  // Rozmiar mikro: 0.5px do 2.0px
                   s: Math.random() * 1.5 + 0.5, 
                   stopped: false 
               };
 
               arr[i].t = gsap.to(arr[i], {
                   y: ch + 20, 
+                  // Wiatr: przesuwa w prawo o 150-250px w trakcie spadania
                   x: '+=' + (200 + gsap.utils.random(-50, 50)), 
                   ease: "none",
-                  duration: gsap.utils.random(3, 8), 
+                  
+                  // --- O WIELE WOLNIEJ ---
+                  // Czas spadania: od 15 do 25 sekund
+                  duration: gsap.utils.random(15, 25), 
+                  
                   repeat: -1,
-                  delay: fastForward ? -Math.random() * 8 : 0,
+                  
+                  // --- POPRAWKA BRAKU ŚNIEGU ---
+                  // Skoro śnieg spada 25 sekund, musimy "przewinąć" czas startu
+                  // o losową wartość z zakresu 0-25s. Dzięki temu śnieg będzie 
+                  // w połowie ekranu (nad przyciskami) od razu po wejściu.
+                  delay: fastForward ? -Math.random() * 25 : 0,
+                  
                   onUpdate: function() {
                       checkCollision(arr[i], this);
                   }
@@ -209,7 +221,7 @@ app.get("/", (req, res) => {
               const rects = obstacles();
               
               for (let r of rects) {
-                  const hitMargin = 4; // Mniejszy margines dla małych płatków
+                  const hitMargin = 4;
 
                   // 1. KOLIZJA Z GÓRĄ (TOP)
                   if (flake.x > r.left && flake.x < r.right) {
@@ -230,19 +242,11 @@ app.get("/", (req, res) => {
           }
 
           function freezeFlake(flake, tween, stickX, stickY) {
-              // Zatrzymaj animację
               tween.pause();
-              
-              // Oznacz jako zatrzymany
               flake.stopped = true;
-              
-              // Przyklej w miejscu zderzenia
               flake.x = stickX;
               flake.y = stickY;
-
-              // --- USUNIĘTO TOPNIENIE ---
-              // Płatek zostaje tu na zawsze.
-              // Nie ma kodu gsap.to(opacity: 0)...
+              // Brak znikania - zostaje na zawsze
           }
 
           ctx.fillStyle = '#ffffff'; 
@@ -250,7 +254,6 @@ app.get("/", (req, res) => {
           gsap.ticker.add(() => {
               ctx.clearRect(0, 0, cw, ch);
               arr.forEach(f => {
-                  // Rysujemy wszystkie (te co lecą i te co leżą)
                   ctx.globalAlpha = f.opacity || 0.9; 
                   ctx.beginPath();
                   ctx.arc(f.x, f.y, f.s, 0, Math.PI * 2);
@@ -280,8 +283,4 @@ app.get("/setAll", (req, res) => {
 app.get("/state", (req, res) => {
   const { esp } = req.query;
   if (states[esp]) res.send(`${states[esp].targetAngle},${states[esp].id}`);
-  else res.status(404).send("Unknown ESP");
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Serwer działa na porcie " + PORT));
+  else res.status(404).send("Unknown

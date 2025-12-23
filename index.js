@@ -21,13 +21,13 @@ app.get("/", (req, res) => {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
-      /* --- CIEMNIEJSZE TŁO --- */
+      /* --- STYLE OGÓLNE --- */
       html, body {
         margin: 0;
         padding: 0;
         width: 100%;
         height: 100%;
-        background: #000000; /* Absolutna czerń */
+        background: #050505; /* Bardzo ciemne tło */
         overflow: hidden;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       }
@@ -54,36 +54,33 @@ app.get("/", (req, res) => {
         align-items: center;
       }
 
-      /* Usunąłem tło kontenera, żeby przyciski były "osobnymi bytami" */
       .container { 
-        max-width: 600px; /* Szerszy kontener na układ poziomy */
+        max-width: 600px;
         width: 95%;
         text-align: center;
         position: relative; 
       }
       
       h1 { 
-        color: #ddd;
+        color: #fff;
         font-weight: 300;
         letter-spacing: 2px;
         margin-bottom: 40px;
-        text-shadow: 0 0 10px rgba(255,255,255,0.1);
+        text-shadow: 0 0 10px rgba(255,255,255,0.2);
       }
       
-      /* --- UKŁAD RÓWNOLEGŁY (POZIOMY) --- */
       .mood-buttons { 
         display: flex; 
-        flex-direction: row; /* W poziomie */
-        gap: 30px; /* Odstęp między "wyspami" */
+        flex-direction: row; 
+        gap: 40px; /* Duże odstępy, żeby śnieg mógł spadać między nimi */
         justify-content: center; 
-        flex-wrap: wrap; /* Żeby na małym telefonie się zmieściły */
+        flex-wrap: wrap;
       }
       
       .btn { 
-        /* Każdy przycisk to osobny, duży blok */
         width: 100px;
         height: 100px;
-        border-radius: 15px; 
+        border-radius: 12px; 
         border: none;
         cursor: pointer; 
         color: white; 
@@ -91,26 +88,27 @@ app.get("/", (req, res) => {
         font-size: 16px;
         position: relative; 
         transition: transform 0.1s;
-        
-        /* Cień żeby wyglądały na przestrzenne */
-        box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+        box-shadow: 0 10px 25px rgba(0,0,0,1); /* Mocny cień */
         
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        
+        /* Ważne: twarde krawędzie dla kolizji */
+        backdrop-filter: blur(4px);
       }
 
       .btn:active { transform: scale(0.95); }
 
-      /* Kolory przycisków - trochę ciemniejsze */
+      /* Kolory przycisków */
       .btn-hepi { background: linear-gradient(135deg, #2e7d32, #1b5e20); border: 1px solid #4caf50; }
       .btn-normal { background: linear-gradient(135deg, #1565c0, #0d47a1); border: 1px solid #2196f3; }
-      .btn-sad { background: linear-gradient(135deg, #455a64, #263238); border: 1px solid #607d8b; }
+      .btn-sad { background: linear-gradient(135deg, #37474f, #263238); border: 1px solid #546e7a; }
 
-      .emoji { font-size: 30px; margin-bottom: 5px; display: block; }
+      .emoji { font-size: 32px; margin-bottom: 8px; display: block; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
 
-      #status { font-size: 12px; color: #555; margin-top: 30px; display: block;}
+      #status { font-size: 12px; color: #666; margin-top: 30px; display: block;}
     </style>
   </head>
   <body>
@@ -147,7 +145,7 @@ app.get("/", (req, res) => {
           .then(() => {
              status.innerText = "OK";
              status.style.color = "#4CAF50";
-             setTimeout(() => { status.innerText = "Gotowy"; status.style.color = "#555"; }, 2000);
+             setTimeout(() => { status.innerText = "Gotowy"; status.style.color = "#666"; }, 2000);
           })
           .catch(() => status.innerText = "Błąd!");
       }
@@ -169,9 +167,7 @@ app.get("/", (req, res) => {
               c.height = ch;
           });
 
-          // --- OSOBNE BYTY ---
-          // Zwracamy tylko przyciski, bez kontenera.
-          // Śnieg spadnie między nimi.
+          // Pobieramy pozycje przycisków
           const obstacles = () => {
              return [
                  document.getElementById('btnHepi').getBoundingClientRect(),
@@ -180,24 +176,30 @@ app.get("/", (req, res) => {
              ];
           };
 
-          for (let i = 0; i < 800; i++) makeFlake(i, true);
+          // Więcej płatków dla lepszego efektu
+          for (let i = 0; i < 900; i++) makeFlake(i, true);
 
           function makeFlake(i, fastForward) {
+              // Startujemy losowo, ale szerzej niż ekran (żeby wiatr nie robił pustki z lewej)
+              const startX = Math.random() * (cw + 200) - 200; 
+              
               arr[i] = { 
-                  x: Math.random() * cw, 
+                  x: startX, 
                   y: -20, 
-                  s: Math.random() * 3 + 1, 
+                  s: Math.random() * 3 + 1, // Wielkość
                   stopped: false 
               };
 
+              // --- ANIMACJA Z WIATREM I ORYGINALNĄ PRĘDKOŚCIĄ ---
               arr[i].t = gsap.to(arr[i], {
                   y: ch + 20, 
-                  x: '+=' + gsap.utils.random(-100, 100),
+                  // Wiatr wieje w prawo (+200px w trakcie spadania)
+                  x: '+=' + (200 + gsap.utils.random(-50, 50)), 
                   ease: "none",
-                  // Przyspieszone o 20%
-                  duration: gsap.utils.random(2.4, 6.4), 
+                  // Oryginalna prędkość (wolniej niż poprzednio)
+                  duration: gsap.utils.random(3, 8), 
                   repeat: -1,
-                  delay: fastForward ? -Math.random() * 5 : 0,
+                  delay: fastForward ? -Math.random() * 8 : 0,
                   onUpdate: function() {
                       checkCollision(arr[i], this);
                   }
@@ -210,35 +212,55 @@ app.get("/", (req, res) => {
               const rects = obstacles();
               
               for (let r of rects) {
-                  // Sprawdzamy czy płatek jest nad KONKRETNYM bloczkiem
+                  // Margines błędu kolizji
+                  const hitMargin = 6;
+
+                  // 1. KOLIZJA Z GÓRĄ (TOP)
+                  // Sprawdzamy czy płatek jest w poziomie przycisku
                   if (flake.x > r.left && flake.x < r.right) {
-                      if (Math.abs(flake.y - r.top) < 5) {
-                          tween.pause();
-                          flake.stopped = true;
-                          flake.y = r.top - flake.s/2; 
-                          
-                          // Topnienie (opcjonalne)
-                          gsap.to(flake, { opacity: 0, duration: 2, delay: 4, onComplete: () => {
-                             flake.stopped = false;
-                             flake.opacity = 1;
-                             flake.y = -20;
-                             flake.x = Math.random() * cw;
-                             tween.play(0);
-                          }});
+                      // Czy dotyka góry?
+                      if (Math.abs(flake.y - r.top) < hitMargin) {
+                          freezeFlake(flake, tween, flake.x, r.top - flake.s/2);
+                          return;
+                      }
+                  }
+
+                  // 2. KOLIZJA Z BOKIEM (LEWA STRONA - bo wiatr wieje w prawo)
+                  // Sprawdzamy czy płatek jest w pionie przycisku (pomiędzy górą a dołem)
+                  if (flake.y > r.top && flake.y < r.bottom) {
+                      // Czy dotyka lewej krawędzi?
+                      if (Math.abs(flake.x - r.left) < hitMargin) {
+                          freezeFlake(flake, tween, r.left - flake.s/2, flake.y);
                           return;
                       }
                   }
               }
           }
 
-          // --- CIEMNIEJSZY ŚNIEG ---
-          // Zamiast '#fff' dajemy szary
-          ctx.fillStyle = '#8899aa'; 
+          function freezeFlake(flake, tween, stickX, stickY) {
+              tween.pause();
+              flake.stopped = true;
+              flake.x = stickX;
+              flake.y = stickY;
+
+              // Topnienie (znikanie po czasie)
+              gsap.to(flake, { opacity: 0, duration: 2, delay: gsap.utils.random(2, 5), onComplete: () => {
+                  flake.stopped = false;
+                  flake.opacity = 1;
+                  flake.y = -20;
+                  // Reset pozycji startowej (szeroki zakres dla wiatru)
+                  flake.x = Math.random() * (cw + 200) - 200; 
+                  tween.play(0);
+              }});
+          }
+
+          // --- KOLOR BIAŁY ---
+          ctx.fillStyle = '#ffffff'; 
 
           gsap.ticker.add(() => {
               ctx.clearRect(0, 0, cw, ch);
               arr.forEach(f => {
-                  ctx.globalAlpha = f.opacity || 0.8; // Lekka przezroczystość
+                  ctx.globalAlpha = f.opacity || 0.9; 
                   ctx.beginPath();
                   ctx.arc(f.x, f.y, f.s, 0, Math.PI * 2);
                   ctx.fill();
@@ -250,6 +272,7 @@ app.get("/", (req, res) => {
   </html>`);
 });
 
+// Endpointy
 app.get("/setAll", (req, res) => {
   const { angle } = req.query;
   const newAngle = parseInt(angle);

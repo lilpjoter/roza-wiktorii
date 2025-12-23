@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 
-// Przechowujemy cel (np. 1080) i ID
+// Przechowujemy cel i ID
 let states = {
   esp1: { targetAngle: 0, id: 0 },
   esp2: { targetAngle: 0, id: 0 }
@@ -14,47 +14,77 @@ app.get("/", (req, res) => {
   <html>
   <head>
     <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-    <title>Sterowanie 1080° 🌹</title>
+    <title>Sterowanie Nastrojem 🌹</title>
     <style>
-      body { text-align:center; font-family:sans-serif; background-color: #f4f4f4; padding: 20px; }
-      .container { background: white; border: 1px solid #ddd; border-radius: 15px; padding: 20px; margin: 10px auto; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-      input[type=number] { padding: 12px; font-size: 20px; width: 60%; text-align: center; border-radius: 5px; border: 1px solid #ccc; }
-      .send-btn { padding: 12px 20px; font-size: 20px; background-color: #e83e8c; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 5px; }
-      .presets button { padding: 10px; margin: 5px; width: 45%; cursor:pointer; background: #ddd; border:none; border-radius: 4px;}
+      body { text-align:center; font-family:sans-serif; background-color: #fce4ec; padding: 20px; }
+      .container { background: white; border: 2px solid #f8bbd0; border-radius: 20px; padding: 20px; margin: 10px auto; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+      
+      h1 { color: #880e4f; }
+      
+      /* Style dla przycisków emocji */
+      .mood-buttons { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+      
+      .btn { 
+        padding: 20px; 
+        font-size: 24px; 
+        border: none; 
+        border-radius: 15px; 
+        cursor: pointer; 
+        transition: transform 0.2s;
+        color: white; 
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      }
+
+      .btn:active { transform: scale(0.95); }
+
+      /* Kolory przycisków */
+      .btn-hepi { background-color: #4CAF50; } /* Zielony */
+      .btn-normal { background-color: #2196F3; } /* Niebieski */
+      .btn-sad { background-color: #607D8B; }   /* Szary/Smutny */
+
+      /* Ukryta sekcja debugowania (dla Ciebie) */
+      .debug { margin-top: 30px; font-size: 12px; color: #aaa; }
     </style>
   </head>
   <body>
-    <h1>🌹 Sterowanie Wieloobrotowe</h1>
+    <h1>🌹 Jak się czuje Róża?</h1>
     
     <div class="container">
-      <h2>Podaj Kąt (0 - 1080)</h2>
-      <div>
-        <input type="number" id="angleInput" placeholder="0">
-        <button class="send-btn" onclick="sendCustomAngle()">Wyślij</button>
-      </div>
-      <p><small>Jeśli masz zwykłe serwo, 1080° zostanie przeskalowane do 180°.</small></p>
-    </div>
+      <div class="mood-buttons">
+        
+        <button class="btn btn-hepi" onclick="setGlobalAngle(0)">
+          😊 Hepi
+        </button>
 
-    <div class="container presets">
-      <button onclick="setGlobalAngle(0)">0° (Start)</button>
-      <button onclick="setGlobalAngle(360)">360° (1 Obrót)</button>
-      <button onclick="setGlobalAngle(720)">720° (2 Obroty)</button>
-      <button onclick="setGlobalAngle(1080)">1080° (MAX)</button>
+        <button class="btn btn-normal" onclick="setGlobalAngle(540)">
+          😐 Normal
+        </button>
+
+        <button class="btn btn-sad" onclick="setGlobalAngle(1080)">
+          😢 Smuticzek
+        </button>
+
+      </div>
+      
+      <div class="debug">
+        <p>Debug: <span id="status">Czekam...</span></p>
+      </div>
     </div>
 
     <script>
       function setGlobalAngle(angle) {
-        fetch(\`/setAll?angle=\${angle}\`);
-      }
-      function sendCustomAngle() {
-        const val = document.getElementById('angleInput').value;
-        if(val !== "") setGlobalAngle(val);
+        document.getElementById('status').innerText = "Wysyłam: " + angle;
+        fetch(\`/setAll?angle=\${angle}\`)
+          .then(() => document.getElementById('status').innerText = "Wysłano: " + angle)
+          .catch(() => document.getElementById('status').innerText = "Błąd połączenia!");
       }
     </script>
   </body>
   </html>`);
 });
 
+// Reszta kodu bez zmian...
 app.get("/setAll", (req, res) => {
   const { angle } = req.query;
   const newAngle = parseInt(angle);
@@ -63,7 +93,7 @@ app.get("/setAll", (req, res) => {
       states[esp].targetAngle = newAngle;
       states[esp].id++;
     }
-    console.log(`Cel globalny: ${newAngle}`);
+    console.log(`Nowy nastrój: ${newAngle}`);
     res.send("OK");
   } else {
     res.status(400).send("Error");

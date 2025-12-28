@@ -131,7 +131,7 @@ app.get("/", (req, res) => {
             hepi
           </button>
           
-          <button class="btn btn-normal" id="btnNormal" onclick="setGlobalAngle(540)">
+          <button class="btn btn-normal" id="btnNormal" onclick="setGlobalAngle(270)">
              normal
           </button>
           

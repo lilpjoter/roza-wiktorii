@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Snowy Mood Control ❄️🌹</title>
+    <title>Jak sie dzis czuje pupik</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -124,19 +124,19 @@ app.get("/", (req, res) => {
 
     <div class="ui-layer">
       <div class="container">
-        <h1>Control Unit</h1>
+        <h1>jak sie dzis czujemy pupiku</h1>
         
         <div class="mood-buttons">
           <button class="btn btn-hepi" id="btnHepi" onclick="setGlobalAngle(0)">
-            Hepi
+            hepi
           </button>
           
           <button class="btn btn-normal" id="btnNormal" onclick="setGlobalAngle(540)">
-             Normal
+             normal
           </button>
           
           <button class="btn btn-sad" id="btnSad" onclick="setGlobalAngle(1080)">
-             Sad
+             smuticzek
           </button>
         </div>
         
